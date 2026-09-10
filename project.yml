@@ -1,0 +1,46 @@
+name: LilyStream
+options:
+  bundleIdPrefix: com.connor
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    MARKETING_VERSION: "1.0"
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: XF783932R2
+    CODE_SIGN_STYLE: Manual
+packages:
+  LiveKit:
+    url: https://github.com/livekit/client-sdk-swift
+    from: "2.0.0"
+targets:
+  LilyStream:
+    type: application
+    platform: iOS
+    sources:
+      - Sources/LilyStream
+    dependencies:
+      - package: LiveKit
+        product: LiveKit
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.connor.lilystream
+        PRODUCT_NAME: LilyStream
+        INFOPLIST_KEY_CFBundleDisplayName: Lily Stream
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+        INFOPLIST_KEY_NSCameraUsageDescription: Lily Stream uses the camera to broadcast the match.
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: Lily Stream uses the microphone so viewers can hear the match.
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: Lily Stream finds nearby devices that can broadcast.
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UIBackgroundModes: "audio voip"
+        PROVISIONING_PROFILE_SPECIFIER: LilyStream CI
+        CODE_SIGN_IDENTITY: Apple Distribution
+schemes:
+  LilyStream:
+    build:
+      targets:
+        LilyStream: all
+    archive:
+      config: Release
