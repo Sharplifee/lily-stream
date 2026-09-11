@@ -19,8 +19,43 @@ jobs:
 
       - name: Inject backend config
         run: |
-          /usr/libexec/PlistBuddy -c "Add :SUPABASE_URL string ${{ secrets.SUPABASE_URL }}" Info.plist 2>/dev/null || true
-        continue-on-error: true
+          python3 - <<'PY'
+          import re
+          p = 'project.yml'
+          s = open(p).read()
+          s = s.replace('        GENERATE_INFOPLIST_FILE: YES',
+                        '        GENERATE_INFOPLIST_FILE: YES\n'
+                        '        INFOPLIST_KEY_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}\n'
+                        '        INFOPLIST_KEY_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}')
+          open(p,'w').write(s)
+          PY
+
+      - name: Resolve build number from TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+        run: |
+          python3 -m pip install --quiet pyjwt cryptography requests
+          echo "$ASC_KEY_P8" > /tmp/asc.p8
+          python3 - <<'PY' >> $GITHUB_ENV
+          import jwt, time, os, requests
+          key = open('/tmp/asc.p8').read()
+          tok = jwt.encode({"iss": os.environ["ASC_ISSUER_ID"], "iat": int(time.time()),
+                            "exp": int(time.time())+1200, "aud": "appstoreconnect-v1"},
+                           key, algorithm="ES256", headers={"kid": os.environ["ASC_KEY_ID"]})
+          r = requests.get("https://api.appstoreconnect.apple.com/v1/builds",
+                           params={"filter[app]": os.environ["ASC_APP_ID"], "limit": 200},
+                           headers={"Authorization": f"Bearer {tok}"}).json()
+          nums = [int(b["attributes"]["version"]) for b in r.get("data", [])
+                  if str(b["attributes"].get("version","")).isdigit()]
+          print(f"BUILD_NUMBER={max(nums)+1 if nums else 1}")
+          PY
+
+      - name: Stamp build number
+        run: |
+          sed -i '' "s/MARKETING_VERSION: \"1.0\"/MARKETING_VERSION: \"1.0\"\n    CURRENT_PROJECT_VERSION: \"$BUILD_NUMBER\"/" project.yml
 
       - name: Generate project
         run: xcodegen generate
@@ -74,3 +109,39 @@ jobs:
         with:
           name: LilyStream-ipa
           path: build/ipa/*.ipa
+
+      - name: Upload to TestFlight
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$ASC_KEY_P8" > ~/.appstoreconnect/private_keys/AuthKey_$ASC_KEY_ID.p8
+          IPA=$(ls build/ipa/*.ipa | head -1)
+          set +e
+          xcrun altool --upload-app -f "$IPA" -t ios \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee upload.log
+          CODE=${PIPESTATUS[0]}
+          set -e
+          # altool exits non-zero on a 409 even after the binary has landed, so
+          # confirm by polling for the build rather than blind-retrying.
+          if [ "$CODE" != "0" ]; then
+            echo "altool exit $CODE - polling App Store Connect for build $BUILD_NUMBER"
+            sleep 90
+            python3 - <<'PY'
+          import jwt, time, os, requests, sys
+          key = open(os.path.expanduser(f"~/.appstoreconnect/private_keys/AuthKey_{os.environ['ASC_KEY_ID']}.p8")).read()
+          tok = jwt.encode({"iss": os.environ["ASC_ISSUER_ID"], "iat": int(time.time()),
+                            "exp": int(time.time())+1200, "aud": "appstoreconnect-v1"},
+                           key, algorithm="ES256", headers={"kid": os.environ["ASC_KEY_ID"]})
+          want = os.environ.get("BUILD_NUMBER")
+          r = requests.get("https://api.appstoreconnect.apple.com/v1/builds",
+                           params={"filter[app]": os.environ["ASC_APP_ID"], "limit": 200},
+                           headers={"Authorization": f"Bearer {tok}"}).json()
+          found = [b for b in r.get("data", []) if b["attributes"].get("version") == want]
+          print("build present:", bool(found))
+          sys.exit(0 if found else 1)
+          PY
+          fi
