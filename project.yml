@@ -27,7 +27,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.connor.lilystream
         PRODUCT_NAME: LilyStream
-        INFOPLIST_KEY_CFBundleDisplayName: Lily Stream
+        INFOPLIST_KEY_CFBundleDisplayName: LilyLive+
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIUserInterfaceStyle: Dark
         INFOPLIST_KEY_NSCameraUsageDescription: Lily Stream uses the camera to broadcast the match.

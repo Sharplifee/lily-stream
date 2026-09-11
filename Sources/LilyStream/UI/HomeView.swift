@@ -24,7 +24,7 @@ struct HomeView: View {
 
     private var header: some View {
         HStack {
-            Text("Lily Stream")
+            Text("LilyLive+")
                 .font(.system(size: 30, weight: .bold, design: .rounded))
                 .foregroundStyle(Theme.text)
             Spacer()
