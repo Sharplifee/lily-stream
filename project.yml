@@ -34,7 +34,10 @@ targets:
         INFOPLIST_KEY_NSCameraUsageDescription: Lily Stream uses the camera to broadcast the match.
         INFOPLIST_KEY_NSMicrophoneUsageDescription: Lily Stream uses the microphone so viewers can hear the match.
         INFOPLIST_KEY_NSLocalNetworkUsageDescription: Lily Stream finds nearby devices that can broadcast.
-        INFOPLIST_KEY_UISupportedInterfaceOrientations: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
         INFOPLIST_KEY_UIBackgroundModes: "audio voip"
         PROVISIONING_PROFILE_SPECIFIER: LilyStream CI
         CODE_SIGN_IDENTITY: Apple Distribution

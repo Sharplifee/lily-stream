@@ -126,6 +126,12 @@ jobs:
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee upload.log
           CODE=${PIPESTATUS[0]}
           set -e
+          # altool exits 0 even when Apple rejects the package, so trust the log.
+          if grep -qiE "UPLOAD FAILED|ERROR ITMS|Failed to upload package" upload.log; then
+            echo "altool reported success but the log shows a rejection:"
+            grep -iE "UPLOAD FAILED|ERROR|detail :" upload.log | head -20
+            exit 1
+          fi
           # altool exits non-zero on a 409 even after the binary has landed, so
           # confirm by polling for the build rather than blind-retrying.
           if [ "$CODE" != "0" ]; then
