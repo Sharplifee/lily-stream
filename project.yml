@@ -25,6 +25,7 @@ targets:
         product: LiveKit
     settings:
       base:
+        GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: com.connor.lilystream
         PRODUCT_NAME: LilyStream
         INFOPLIST_KEY_CFBundleDisplayName: LilyLive+
